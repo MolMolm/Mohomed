@@ -1,185 +1,180 @@
+<?php
+
+include 'config.php';
+session_start();
+$user_id = $_SESSION['user_id'];
+
+if(!isset($user_id)){
+   header('location:login.php');
+};
+
+if(isset($_GET['logout'])){
+   unset($user_id);
+   session_destroy();
+   header('location:login.php');
+};
+
+if(isset($_POST['add_to_cart'])){
+
+   $product_name = $_POST['product_name'];
+   $product_price = $_POST['product_price'];
+   $product_image = $_POST['product_image'];
+   $product_quantity = $_POST['product_quantity'];
+
+   $select_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE name = '$product_name' AND user_id = '$user_id'") or die('query failed');
+
+   if(mysqli_num_rows($select_cart) > 0){
+      $message[] = 'المنتج أضيف بالفعل إلى عربة التسوق!';
+   }else{
+      mysqli_query($conn, "INSERT INTO `cart`(user_id, name, price, image, quantity) VALUES('$user_id', '$product_name', '$product_price', '$product_image', '$product_quantity')") or die('query failed');
+      $message[] = 'المنتج يضاف الى عربة التسوق!';
+   }
+
+};
+
+if(isset($_POST['update_cart'])){
+   $update_quantity = $_POST['cart_quantity'];
+   $update_id = $_POST['cart_id'];
+   mysqli_query($conn, "UPDATE `cart` SET quantity = '$update_quantity' WHERE id = '$update_id'") or die('query failed');
+   $message[] = 'تم تحديث كمية سلة التسوق بنجاح!';
+}
+
+if(isset($_GET['remove'])){
+   $remove_id = $_GET['remove'];
+   mysqli_query($conn, "DELETE FROM `cart` WHERE id = '$remove_id'") or die('query failed');
+   header('location:index.php');
+}
+  
+if(isset($_GET['delete_all'])){
+   mysqli_query($conn, "DELETE FROM `cart` WHERE user_id = '$user_id'") or die('query failed');
+   header('location:index.php');
+}
+
+?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <title>Document</title>
-    
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>عربة التسوق</title>
 
-    <style>
-        body{
-            background-color:#00f4ab0c;
-            font-family:'Tajawal',sans-serif;
-        }
-        #mother{
-            width:100%;
-            font-size:20px;
-        }
-main{
+   <!-- custom css file link  -->
+   <link rel="stylesheet" href="css/style.css">
 
-    float:left;
-    border: 1px solid gray;
-    padding: 5px;
-}
-input{
-
-    padding:4px;
-    border:2px solid black;
-    text-align:center;
-    font-size:17px;
-    font-family:'Tajawal', sans-serif;
-}
-aside{
-    text-align:center;
-    width:300px;
-    float:right;
-    border:1px solid black;
-    padding:10px;
-    font-size:20px;
-    background-color:#033b4a;
-    color:white;
-
-    
-}
-#tbl{
-width:890px;
-font-size:20px;
-text-align:center;
-
-}
-
-#tbl th{
-    background-color:#033b4a;
-    color:#fff;
-    font-size:20px;
-    padding:10px;
-    text-align:center;
-
-
-}
-aside button{
-background:#20caa7;
-color: #fff;
-    width:190px;
-    padding:8px;
-    margin-top:7px;
-    font-size:17px;
-    font-family:'Tajawal',sans-serif;
-    font-weight:bold;
-}
-aside button:focus{
-    background:#15a076;
-}
-    </style>
 </head>
-<body dir='rtl'>
+<body>
+   
 <?php
-#الاتصال مع قاعدة البيانات
-$host='localhost';
-$user='root';
-$pass='';
-$db='student1';
-$con=mysqli_connect($host,$user,$pass,$db);
-$res=mysqli_query($con,"select * from student");
-#butten variable--
-$id='';
-$name='';
-$address='';
-if(isset($_POST['id'])){
-
-    $id=$_POST['id'];
-
+if(isset($message)){
+   foreach($message as $message){
+      echo '<div class="message" onclick="this.remove();">'.$message.'</div>';
+   }
 }
-if(isset($_POST['name'])){
-
-    $name=$_POST['name'];
-
-}
-if(isset($_POST['address'])){
-
-    $address=$_POST['address'];
-
-}
-$sqls='';
-if(isset($_POST['add'])){
-
-    $sqls="insert into student value($id,'$name','$address')";
-    mysqli_query($con,$sqls);
-    header("location: ho.php");
-
-}
-
-if(isset($_POST['del'])){
-
-    $sqls="delete from student where name='$name'";
-    mysqli_query($con,$sqls);
-    header("location: ho.php");
-
-}
-
-
-
-
-
 ?>
 
+<div class="container">
 
+<div class="user-profile">
 
+   <?php
+      $select_user = mysqli_query($conn, "SELECT * FROM `users` WHERE id = '$user_id'") or die('query failed');
+      if(mysqli_num_rows($select_user) > 0){
+         $fetch_user = mysqli_fetch_assoc($select_user);
+      };
+   ?>
 
-    <div id='mother'>
-<form method='POST'>
-    <!--لوحت التحكم-->
-    <aside>
-        <div id='div'>
-            <img src='Mohammed.png' alt='لوجو الموقع'width="200">
-            <h3>لوحة المدير</h3>
-            <label>رقم الطالب:</label><br>
-            <input type='text' name='id' id='id'><br>
-            <label>اسم الطالب:</label><br>
-            <input type='text' name='name' id='name'><br>
-            <label>عنوان الطالب:</label><br>
-            <input type='text'name='address' id='address'><br><br>
-            <button name='add'> اضافة طالب</button>
-            <button name='del'>حدف الطالب</button>
+   <p>المستخدم الحالي : <span><?php echo $fetch_user['name']; ?></span> </p>
+   <div class="flex">
+      <a href="index.php?logout=<?php echo $user_id; ?>" onclick="return confirm('هل أنت متأكد أنك تريد تسجيل الخروج؟');" class="delete-btn">تسجيل الخروج</a>
+   </div>
 
-        </div>
-</aside>
-<!--عرض بيانات الطلاب-->
-<main>
-<table id='tbl'>
-    <tr>
-        <th>الرقم التسلسلي</th>
-        <th>اسم الطالب</th>
-        <th>عنوان الطالب</th>
-    </tr>
-    <?php
-while($row = mysqli_fetch_array($res)){
-    echo"<tr>";
-    echo"<td>".$row['id']."</td>";
-    echo"<td>".$row['name']."</td>";
-    echo"<td>".$row['address']."</td>";
-    echo"</tr>";
+</div>
 
+<div class="products">
 
+   <h1 class="heading">أحدث المنتجات</h1>
 
+   <div class="box-container">
 
-}
+   <?php
+   include('config.php');
+   $result = mysqli_query($conn, "SELECT * FROM products");      
+   while($row = mysqli_fetch_array($result)){
+   ?>
+      <form method="post" class="box" action="">
+         <img src="admin/<?php echo $row['image']; ?>"  width="200">
+         <div class="name"><?php echo $row['name']; ?></div>
+         <div class="price"><?php echo $row['price']; ?></div>
+         <input type="number" min="1" name="product_quantity" value="1">
+         <input type="hidden" name="product_image" value="<?php echo $row['image']; ?>">
+         <input type="hidden" name="product_name" value="<?php echo $row['name']; ?>">
+         <input type="hidden" name="product_price" value="<?php echo $row['price']; ?>">
+         <input type="submit" value="add to cart" name="add_to_cart" class="btn">
+      </form>
+   <?php
+      };
+   ?>
 
+   </div>
 
+</div>
 
-?>
-</table>
-</main>
-</form>
+<div class="shopping-cart">
+
+   <h1 class="heading"> عربة التسوق</h1>
+
+   <table>
+      <thead>
+         <th>الصورة</th>
+         <th>الاسم</th>
+         <th>السعر</th>
+         <th>العدد</th>
+         <th>السعر الكلي</th>
+         <th>العمل</th>
+      </thead>
+      <tbody>
+      <?php
+         $cart_query = mysqli_query($conn, "SELECT * FROM `cart` WHERE user_id = '$user_id'") or die('query failed');
+         $grand_total = 0;
+         if(mysqli_num_rows($cart_query) > 0){
+            while($fetch_cart = mysqli_fetch_assoc($cart_query)){
+      ?>
+         <tr>
+            <td><img src="admin/<?php echo $fetch_cart['image']; ?>" height="75" alt=""></td>
+            <td><?php echo $fetch_cart['name']; ?></td>
+            <td><?php echo $fetch_cart['price']; ?>$ </td>
+            <td>
+               <form action="" method="post">
+                  <input type="hidden" name="cart_id" value="<?php echo $fetch_cart['id']; ?>">
+                  <input type="number" min="1" name="cart_quantity" value="<?php echo $fetch_cart['quantity']; ?>">
+                  <input type="submit" name="update_cart" value="تعديل" class="option-btn">
+               </form>
+            </td>
+            <td><?php echo $sub_total = ($fetch_cart['price'] * $fetch_cart['quantity']); ?>$</td>
+            <td><a href="index.php?remove=<?php echo $fetch_cart['id']; ?>" class="delete-btn" onclick="return confirm('إزالة العنصر من سلة التسوق؟');">حذف</a></td>
+         </tr>
+      <?php
+         $grand_total += $sub_total;
+            }
+         }else{
+            echo '<tr><td style="padding:20px; text-transform:capitalize;" colspan="6">العربة فارغة</td></tr>';
+         }
+      ?>
+      <tr class="table-bottom">
+         <td colspan="4">المبلغ الإجمالي :</td>
+         <td><?php echo $grand_total; ?>$</td>
+         <td><a href="index.php?delete_all" onclick="return confirm('حذف كل المنتجات من العربة?');" class="delete-btn <?php echo ($grand_total > 1)?'':'disabled'; ?>">حذف الكل</a></td>
+      </tr>
+   </tbody>
+   </table>
 
 
 
 </div>
 
+</div>
 
 </body>
 </html>
